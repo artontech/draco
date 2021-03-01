@@ -63,76 +63,103 @@ bool PlyEncoder::EncodeToBuffer(const Mesh &mesh, EncoderBuffer *out_buffer) {
 }
 bool PlyEncoder::EncodeInternal() {
   // Write PLY header.
-  // TODO(ostava): Currently works only for xyz positions and rgb(a) colors.
+  // TODO(ostava): Currently works only for xyz positions, rgb(a) colors, and named generic.
   std::stringstream out;
   out << "ply" << std::endl;
   out << "format binary_little_endian 1.0" << std::endl;
   out << "element vertex " << in_point_cloud_->num_points() << std::endl;
 
-  const int pos_att_id =
-      in_point_cloud_->GetNamedAttributeId(GeometryAttribute::POSITION);
-  int normal_att_id =
-      in_point_cloud_->GetNamedAttributeId(GeometryAttribute::NORMAL);
-  int tex_coord_att_id =
-      in_point_cloud_->GetNamedAttributeId(GeometryAttribute::TEX_COORD);
-  const int color_att_id =
-      in_point_cloud_->GetNamedAttributeId(GeometryAttribute::COLOR);
+  // Classify attributes
+  PointAttribute const *pos_att = NULL, *normal_att = NULL, *tex_att = NULL, *color_att = NULL;
+  std::vector<int32_t> generic_att_ids;
+  for (int i = 0; i< in_point_cloud_->num_attributes(); i++) {
+    const PointAttribute *att = in_point_cloud_->attribute(i);
+    switch (att->attribute_type()) {
+      case GeometryAttribute::POSITION:
+        pos_att = att;
+      break;
+      case GeometryAttribute::NORMAL:
+        normal_att = att;
+      break;
+      case GeometryAttribute::TEX_COORD:
+        tex_att = att;
+      break;
+      case GeometryAttribute::COLOR:
+        color_att = att;
+      break;
+      case GeometryAttribute::GENERIC:
+        if (in_point_cloud_->GetMetadataEntryIntByAttributeId(i, "output") &&
+            !in_point_cloud_->GetMetadataEntryStringByAttributeId(i, "name")
+                .empty()) {
+          generic_att_ids.push_back(i);
+        }
+      break;
+      default:
+      break;
+    }
+  }
 
-  if (pos_att_id < 0) {
+  if (NULL == pos_att) {
     return false;
   }
 
   // Ensure normals are 3 component. Don't encode them otherwise.
-  if (normal_att_id >= 0 &&
-      in_point_cloud_->attribute(normal_att_id)->num_components() != 3) {
-    normal_att_id = -1;
+  if (normal_att && normal_att->num_components() != 3) {
+    normal_att = NULL;
   }
 
   // Ensure texture coordinates have only 2 components. Don't encode them
   // otherwise. TODO(ostava): Add support for 3 component normals (uvw).
-  if (tex_coord_att_id >= 0 &&
-      in_point_cloud_->attribute(tex_coord_att_id)->num_components() != 2) {
-    tex_coord_att_id = -1;
+  if (tex_att && tex_att->num_components() != 2) {
+    tex_att = NULL;
   }
 
-  out << "property " << GetAttributeDataType(pos_att_id) << " x" << std::endl;
-  out << "property " << GetAttributeDataType(pos_att_id) << " y" << std::endl;
-  out << "property " << GetAttributeDataType(pos_att_id) << " z" << std::endl;
-  if (normal_att_id >= 0) {
-    out << "property " << GetAttributeDataType(normal_att_id) << " nx"
+  out << "property " << GetAttributeDataType(pos_att) << " x" << std::endl;
+  out << "property " << GetAttributeDataType(pos_att) << " y" << std::endl;
+  out << "property " << GetAttributeDataType(pos_att) << " z" << std::endl;
+  if (normal_att) {
+    out << "property " << GetAttributeDataType(normal_att) << " nx"
         << std::endl;
-    out << "property " << GetAttributeDataType(normal_att_id) << " ny"
+    out << "property " << GetAttributeDataType(normal_att) << " ny"
         << std::endl;
-    out << "property " << GetAttributeDataType(normal_att_id) << " nz"
+    out << "property " << GetAttributeDataType(normal_att) << " nz"
         << std::endl;
   }
-  if (color_att_id >= 0) {
-    const auto *const attribute = in_point_cloud_->attribute(color_att_id);
-    if (attribute->num_components() > 0) {
-      out << "property " << GetAttributeDataType(color_att_id) << " red"
+  if (color_att) {
+    if (color_att->num_components() > 0) {
+      out << "property " << GetAttributeDataType(color_att) << " red"
           << std::endl;
     }
-    if (attribute->num_components() > 1) {
-      out << "property " << GetAttributeDataType(color_att_id) << " green"
+    if (color_att->num_components() > 1) {
+      out << "property " << GetAttributeDataType(color_att) << " green"
           << std::endl;
     }
-    if (attribute->num_components() > 2) {
-      out << "property " << GetAttributeDataType(color_att_id) << " blue"
+    if (color_att->num_components() > 2) {
+      out << "property " << GetAttributeDataType(color_att) << " blue"
           << std::endl;
     }
-    if (attribute->num_components() > 3) {
-      out << "property " << GetAttributeDataType(color_att_id) << " alpha"
+    if (color_att->num_components() > 3) {
+      out << "property " << GetAttributeDataType(color_att) << " alpha"
           << std::endl;
     }
   }
+
+  // Deal with generic info
+  for (int i = 0; i < generic_att_ids.size(); i++) {
+    int32_t attr_id = generic_att_ids.at(i);
+    PointAttribute const *generic_att = in_point_cloud_->attribute(attr_id);
+    out << "property " << GetAttributeDataType(generic_att) << " "
+        << in_point_cloud_->GetMetadataEntryStringByAttributeId(attr_id, "name")
+        << std::endl;
+  }
+
   if (in_mesh_) {
     out << "element face " << in_mesh_->num_faces() << std::endl;
     out << "property list uchar int vertex_indices" << std::endl;
-    if (tex_coord_att_id >= 0) {
+    if (tex_att) {
       // Texture coordinates are usually encoded in the property list (one value
       // per corner).
-      out << "property list uchar " << GetAttributeDataType(tex_coord_att_id)
-          << " texcoord" << std::endl;
+      out << "property list uchar " << GetAttributeDataType(tex_att) << " texcoord" << std::endl;
     }
   }
   out << "end_header" << std::endl;
@@ -144,18 +171,21 @@ bool PlyEncoder::EncodeInternal() {
 
   // Store point attributes.
   for (PointIndex v(0); v < in_point_cloud_->num_points(); ++v) {
-    const auto *const pos_att = in_point_cloud_->attribute(pos_att_id);
     buffer()->Encode(pos_att->GetAddress(pos_att->mapped_index(v)),
                      pos_att->byte_stride());
-    if (normal_att_id >= 0) {
-      const auto *const normal_att = in_point_cloud_->attribute(normal_att_id);
+    if (normal_att) {
       buffer()->Encode(normal_att->GetAddress(normal_att->mapped_index(v)),
                        normal_att->byte_stride());
     }
-    if (color_att_id >= 0) {
-      const auto *const color_att = in_point_cloud_->attribute(color_att_id);
+    if (color_att) {
       buffer()->Encode(color_att->GetAddress(color_att->mapped_index(v)),
                        color_att->byte_stride());
+    }
+    for (int i = 0; i < generic_att_ids.size(); i++) {
+      int32_t attr_id = generic_att_ids.at(i);
+      PointAttribute const *generic_att = in_point_cloud_->attribute(attr_id);
+      buffer()->Encode(generic_att->GetAddress(generic_att->mapped_index(v)),
+                       generic_att->byte_stride());
     }
   }
 
@@ -170,12 +200,10 @@ bool PlyEncoder::EncodeInternal() {
       buffer()->Encode(f[1]);
       buffer()->Encode(f[2]);
 
-      if (tex_coord_att_id >= 0) {
+      if (tex_att) {
         // Two coordinates for every corner -> 6.
         buffer()->Encode(static_cast<uint8_t>(6));
 
-        const auto *const tex_att =
-            in_point_cloud_->attribute(tex_coord_att_id);
         for (int c = 0; c < 3; ++c) {
           buffer()->Encode(tex_att->GetAddress(tex_att->mapped_index(f[c])),
                            tex_att->byte_stride());
@@ -193,9 +221,9 @@ bool PlyEncoder::ExitAndCleanup(bool return_value) {
   return return_value;
 }
 
-const char *PlyEncoder::GetAttributeDataType(int attribute) {
+const char *PlyEncoder::GetAttributeDataType(const PointAttribute * att) {
   // TODO(ostava): Add support for more types.
-  switch (in_point_cloud_->attribute(attribute)->data_type()) {
+  switch (att->data_type()) {
     case DT_FLOAT32:
       return "float";
     case DT_UINT8:
@@ -206,6 +234,10 @@ const char *PlyEncoder::GetAttributeDataType(int attribute) {
       break;
   }
   return nullptr;
+}
+
+const char *PlyEncoder::GetAttributeDataType(int attribute) {
+  return GetAttributeDataType(in_point_cloud_->attribute(attribute));
 }
 
 }  // namespace draco

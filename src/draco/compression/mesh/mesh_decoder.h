@@ -36,6 +36,9 @@ class MeshDecoder : public PointCloudDecoder {
   Status Decode(const DecoderOptions &options, DecoderBuffer *in_buffer,
                 Mesh *out_mesh);
 
+  Status DecodeAttr(const DecoderOptions &options, DecoderBuffer *in_buffer,
+                DracoHeader *out_header, Mesh *out_mesh);
+
   // Returns the base connectivity of the decoded mesh (or nullptr if it is not
   // initialized).
   virtual const CornerTable *GetCornerTable() const { return nullptr; }

@@ -38,6 +38,8 @@ struct Options {
   bool use_metadata;
   std::string input;
   std::string output;
+
+  bool split_attr = false;
 };
 
 Options::Options()
@@ -83,6 +85,8 @@ void Usage() {
   printf(
       "  --metadata            use metadata to encode extra information in "
       "mesh files.\n");
+  printf(
+      "  --split_attr          save attr data into seprate files.\n");
   printf(
       "\nUse negative quantization values to skip the specified attribute\n");
 }
@@ -249,6 +253,9 @@ int main(int argc, char **argv) {
       ++i;
     } else if (!strcmp("--metadata", argv[i])) {
       options.use_metadata = true;
+    } else if (!strcmp("--split_attr", argv[i])) {
+      options.split_attr = true;
+      options.use_metadata = true;
     }
   }
   if (argc < 3 || options.input.empty()) {
@@ -351,6 +358,12 @@ int main(int argc, char **argv) {
   }
 
   PrintOptions(*pc.get(), options);
+
+  // Set options
+  auto &op = encoder.options();
+  op.SetGlobalBool("split_attr", options.split_attr);
+  op.SetGlobalString("output", options.output);
+  std::cout << "Split attr:" << options.split_attr << std::endl;
 
   int ret = -1;
   const bool input_is_mesh = mesh && mesh->num_faces() > 0;

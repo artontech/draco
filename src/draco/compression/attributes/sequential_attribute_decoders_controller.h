@@ -33,7 +33,7 @@ class SequentialAttributeDecodersController : public AttributesDecoder {
       std::unique_ptr<PointsSequencer> sequencer);
 
   bool DecodeAttributesDecoderData(DecoderBuffer *buffer) override;
-  bool DecodeAttributes(DecoderBuffer *buffer) override;
+  Status DecodeAttributes(DecoderBuffer *buffer) override;
   const PointAttribute *GetPortableAttribute(
       int32_t point_attribute_id) override {
     const int32_t loc_id = GetLocalIdForPointAttribute(point_attribute_id);
@@ -44,7 +44,7 @@ class SequentialAttributeDecodersController : public AttributesDecoder {
   }
 
  protected:
-  bool DecodePortableAttributes(DecoderBuffer *in_buffer) override;
+  Status DecodePortableAttributes(DecoderBuffer *in_buffer) override;
   bool DecodeDataNeededByPortableTransforms(DecoderBuffer *in_buffer) override;
   bool TransformAttributesToOriginalFormat() override;
   virtual std::unique_ptr<SequentialAttributeDecoder> CreateSequentialDecoder(

@@ -40,16 +40,20 @@ class PointCloudDecoder {
   Status Decode(const DecoderOptions &options, DecoderBuffer *in_buffer,
                 PointCloud *out_point_cloud);
 
-  bool SetAttributesDecoder(
+  // The main entry point for point cloud attr decoding.
+  Status DecodeAttr(const DecoderOptions &options, DecoderBuffer *in_buffer,
+                DracoHeader *header, PointCloud *out_point_cloud);
+
+  Status SetAttributesDecoder(
       int att_decoder_id, std::unique_ptr<AttributesDecoderInterface> decoder) {
     if (att_decoder_id < 0) {
-      return false;
+      return Status(Status::DRACO_ERROR, "att_decoder_id < 0.");
     }
     if (att_decoder_id >= static_cast<int>(attributes_decoders_.size())) {
       attributes_decoders_.resize(att_decoder_id + 1);
     }
     attributes_decoders_[att_decoder_id] = std::move(decoder);
-    return true;
+    return Status(Status::OK, "PointCloudDecoder.SetAttributesDecoder");
   }
 
   // Returns an attribute containing decoded data in their portable form that
@@ -79,17 +83,20 @@ class PointCloudDecoder {
   DecoderBuffer *buffer() { return buffer_; }
   const DecoderOptions *options() const { return options_; }
 
+  void SetBuffer(DecoderBuffer *buffer) { buffer_ = buffer; }
+
  protected:
   // Can be implemented by derived classes to perform any custom initialization
   // of the decoder. Called in the Decode() method.
   virtual bool InitializeDecoder() { return true; }
 
   // Creates an attribute decoder.
-  virtual bool CreateAttributesDecoder(int32_t att_decoder_id) = 0;
+  virtual Status CreateAttributesDecoder(int32_t att_decoder_id) = 0;
   virtual bool DecodeGeometryData() { return true; }
-  virtual bool DecodePointAttributes();
+  virtual Status DecodePointAttributes();
+  Status DecodePointAttributesAttr();
 
-  virtual bool DecodeAllAttributes();
+  virtual Status DecodeAllAttributes();
   virtual bool OnAttributesDecoded() { return true; }
 
   Status DecodeMetadata();
@@ -111,6 +118,8 @@ class PointCloudDecoder {
   uint8_t version_minor_;
 
   const DecoderOptions *options_;
+
+  uint8_t num_attributes_decoders_;
 };
 
 }  // namespace draco

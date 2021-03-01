@@ -132,6 +132,17 @@ interface Status {
   [Const] DOMString error_msg();
 };
 
+[Prefix="draco::"]
+interface DracoHeader {
+  void DracoHeader();
+
+  octet GetVersionMajor();
+  octet GetVersionMinor();
+  octet GetEncoderType();
+  octet GetEncoderMethod();
+  unsigned short GetFlags();
+};
+
 // Draco version of typed arrays. The memory of these arrays is allocated on the
 // emscripten heap.
 interface DracoFloat32Array {
@@ -198,6 +209,10 @@ interface MetadataQuerier {
 interface Decoder {
   void Decoder();
 
+  [Const] Status DecodeArrayToDracoHeader([Const] byte[] data,
+                                          unsigned long data_size,
+                                          DracoHeader header);
+
   [Const] Status DecodeArrayToPointCloud([Const] byte[] data,
                                          unsigned long data_size,
                                          PointCloud out_point_cloud);
@@ -205,6 +220,12 @@ interface Decoder {
   [Const] Status DecodeArrayToMesh([Const] byte[] data,
                                    unsigned long data_size,
                                    Mesh out_mesh);
+
+  [Const] Status DecodeArrayAttrToMesh([Const] byte[] data,
+                                      unsigned long data_size,
+                                      DracoHeader header,
+                                      [Const] DOMString attribute_name,
+                                      Mesh out_mesh);
 
   long GetAttributeId([Ref, Const] PointCloud pc,
                       draco_GeometryAttribute_Type type);
@@ -275,9 +296,19 @@ interface Decoder {
   draco_EncodedGeometryType GetEncodedGeometryType_Deprecated(
                                 DecoderBuffer in_buffer);
 
+  // Deprecated: Use DecodeArrayToDracoHeader instead.
+  [Const] Status DecodeBufferToDracoHeader(DecoderBuffer in_buffer,
+                                          DracoHeader header);
+
   // Deprecated: UseDecodeArrayToPointCloud instead.
   [Const] Status DecodeBufferToPointCloud(DecoderBuffer in_buffer,
                                           PointCloud out_point_cloud);
   // Deprecated: UseDecodeArrayToMesh instead.
   [Const] Status DecodeBufferToMesh(DecoderBuffer in_buffer, Mesh out_mesh);
+
+  // Deprecated: Use DecodeArrayAttrToMesh instead.
+  [Const] Status DecodeBufferAttrToMesh(DecoderBuffer in_buffer,
+                                        DracoHeader header,
+                                        [Const] DOMString attribute_name,
+                                        Mesh out_mesh);
 };

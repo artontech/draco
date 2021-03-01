@@ -108,6 +108,16 @@ class Decoder {
   static draco_EncodedGeometryType GetEncodedGeometryType_Deprecated(
       draco::DecoderBuffer *in_buffer);
 
+  // Decodes header from the provided buffer.
+  // Deprecated: Use DecodeArrayToDracoHeader.
+  const draco::Status *DecodeBufferToDracoHeader(draco::DecoderBuffer *in_buffer,
+                                                draco::DracoHeader *header);
+
+  // Decodes header from the provided buffer.
+  const draco::Status *DecodeArrayToDracoHeader(const char *data,
+                                              size_t data_size,
+                                              draco::DracoHeader *header);
+
   // Decodes a point cloud from the provided buffer.
   // Deprecated: Use DecodeArrayToPointCloud.
   const draco::Status *DecodeBufferToPointCloud(
@@ -122,9 +132,23 @@ class Decoder {
   const draco::Status *DecodeBufferToMesh(draco::DecoderBuffer *in_buffer,
                                           draco::Mesh *out_mesh);
 
+  // Decodes a triangular mesh from the provided buffer and attribute buffer.
+  // Deprecated: Use DecodeArrayAttrToMesh.
+  const draco::Status *DecodeBufferAttrToMesh(draco::DecoderBuffer *in_buffer,
+                                          draco::DracoHeader *header,
+                                          const char *attribute_name,
+                                          draco::Mesh *out_mesh);
+
   // Decodes a mesh from the provided array.
   const draco::Status *DecodeArrayToMesh(const char *data, size_t data_size,
                                          draco::Mesh *out_mesh);
+
+  // Decodes a mesh from the provided array and attribute buffer.
+  const draco::Status *DecodeArrayAttrToMesh(const char *data,
+                                        size_t data_size,
+                                        draco::DracoHeader *header,
+                                        const char *attribute_name,
+                                        draco::Mesh *out_mesh);
 
   // Returns an attribute id for the first attribute of a given type.
   long GetAttributeId(const draco::PointCloud &pc,

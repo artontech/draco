@@ -14,6 +14,7 @@
 //
 #include "draco/compression/point_cloud/point_cloud_encoder.h"
 
+#include "draco/io/file_utils.h"
 #include "draco/metadata/metadata_encoder.h"
 
 namespace draco {
@@ -159,9 +160,33 @@ bool PointCloudEncoder::GenerateAttributesEncoders() {
 }
 
 bool PointCloudEncoder::EncodeAllAttributes() {
+  bool split_attr = options_->GetGlobalBool("split_attr", false);
+  std::string output = options_->GetGlobalString("output", "");
+  const std::string extension = output.size() > 4 ? output.substr(output.size() - 4) : ".drc";
+  output = output.size() > 4 ? output.substr(0, output.size() - 4) : "output";
+  
   for (int att_encoder_id : attributes_encoder_ids_order_) {
-    if (!attributes_encoders_[att_encoder_id]->EncodeAttributes(buffer_)) {
-      return false;
+    auto &encoder = attributes_encoders_[att_encoder_id];
+    if (split_attr) {
+      EncoderBuffer buffer;
+
+      if (!encoder->EncodeAttributes(&buffer)) {
+        return false;
+      }
+
+      std::string name = point_cloud_->GetMetadataEntryStringByAttributeId(
+        encoder->GetAttributeId(0), "name");
+
+      // Save the encoded geometry into a file.
+      std::string filename = output + '_' + name + extension;
+      if (!WriteBufferToFile(buffer.data(), buffer.size(), filename)) {
+        printf("Failed to create the generic output file.\n");
+        return false;
+      }
+    } else {
+      if (!encoder->EncodeAttributes(buffer_)) {
+        return false;
+      }
     }
   }
   return true;

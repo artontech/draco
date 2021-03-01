@@ -50,10 +50,10 @@ bool SequentialAttributeDecodersController::DecodeAttributesDecoderData(
   return true;
 }
 
-bool SequentialAttributeDecodersController::DecodeAttributes(
+Status SequentialAttributeDecodersController::DecodeAttributes(
     DecoderBuffer *buffer) {
   if (!sequencer_ || !sequencer_->GenerateSequence(&point_ids_)) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to generate sequence.");
   }
   // Initialize point to attribute value mapping for all decoded attributes.
   const int32_t num_attributes = GetNumAttributes();
@@ -61,22 +61,23 @@ bool SequentialAttributeDecodersController::DecodeAttributes(
     PointAttribute *const pa =
         GetDecoder()->point_cloud()->attribute(GetAttributeId(i));
     if (!sequencer_->UpdatePointToAttributeIndexMapping(pa)) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to initialize point to attribute value mapping.");
     }
   }
   return AttributesDecoder::DecodeAttributes(buffer);
 }
 
-bool SequentialAttributeDecodersController::DecodePortableAttributes(
+Status SequentialAttributeDecodersController::DecodePortableAttributes(
     DecoderBuffer *in_buffer) {
   const int32_t num_attributes = GetNumAttributes();
   for (int i = 0; i < num_attributes; ++i) {
-    if (!sequential_decoders_[i]->DecodePortableAttribute(point_ids_,
-                                                          in_buffer)) {
-      return false;
+    Status status = sequential_decoders_[i]->DecodePortableAttribute(point_ids_,
+                                                          in_buffer);
+    if (!status.ok()) {
+      return status;
     }
   }
-  return true;
+  return Status(Status::OK, "Decode sequential.");
 }
 
 bool SequentialAttributeDecodersController::

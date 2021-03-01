@@ -16,6 +16,7 @@
 #define DRACO_COMPRESSION_MESH_MESH_SEQUENTIAL_DECODER_H_
 
 #include "draco/compression/mesh/mesh_decoder.h"
+#include "draco/core/status.h"
 
 namespace draco {
 
@@ -26,7 +27,7 @@ class MeshSequentialDecoder : public MeshDecoder {
 
  protected:
   bool DecodeConnectivity() override;
-  bool CreateAttributesDecoder(int32_t att_decoder_id) override;
+  Status CreateAttributesDecoder(int32_t att_decoder_id) override;
 
  private:
   // Decodes face indices that were compressed with an entropy code.

@@ -24,6 +24,12 @@ Status MeshDecoder::Decode(const DecoderOptions &options,
   return PointCloudDecoder::Decode(options, in_buffer, out_mesh);
 }
 
+Status MeshDecoder::DecodeAttr(const DecoderOptions &options, DecoderBuffer *in_buffer,
+                DracoHeader *out_header, Mesh *out_mesh) {
+  mesh_ = out_mesh;
+  return PointCloudDecoder::DecodeAttr(options, in_buffer, out_header, out_mesh);
+}
+
 bool MeshDecoder::DecodeGeometryData() {
   if (mesh_ == nullptr) {
     return false;

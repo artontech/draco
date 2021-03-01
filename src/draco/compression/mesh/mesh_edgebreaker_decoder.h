@@ -17,6 +17,7 @@
 
 #include "draco/compression/mesh/mesh_decoder.h"
 #include "draco/compression/mesh/mesh_edgebreaker_decoder_impl_interface.h"
+#include "draco/core/status.h"
 #include "draco/draco_features.h"
 
 namespace draco {
@@ -42,7 +43,7 @@ class MeshEdgebreakerDecoder : public MeshDecoder {
 
  protected:
   bool InitializeDecoder() override;
-  bool CreateAttributesDecoder(int32_t att_decoder_id) override;
+  Status CreateAttributesDecoder(int32_t att_decoder_id) override;
   bool DecodeConnectivity() override;
   bool OnAttributesDecoded() override;
 

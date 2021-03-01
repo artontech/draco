@@ -51,6 +51,7 @@ bool SequentialQuantizationAttributeDecoder::
     DecodeDataNeededByPortableTransform(
         const std::vector<PointIndex> &point_ids, DecoderBuffer *in_buffer) {
   if (decoder()->bitstream_version() >= DRACO_BITSTREAM_VERSION(2, 0)) {
+    decoder()->SetBuffer(in_buffer);
     // Decode quantization data here only for files with bitstream version 2.0+
     if (!DecodeQuantizedDataInfo()) {
       return false;

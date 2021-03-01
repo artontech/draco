@@ -125,33 +125,34 @@ MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateVertexTraversalSequencer(
 }
 
 template <class TraversalDecoder>
-bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateAttributesDecoder(
+Status MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateAttributesDecoder(
     int32_t att_decoder_id) {
   int8_t att_data_id;
   if (!decoder_->buffer()->Decode(&att_data_id)) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to decode att_data_id.");
   }
   uint8_t decoder_type;
   if (!decoder_->buffer()->Decode(&decoder_type)) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to decode decoder_type.");
   }
 
   if (att_data_id >= 0) {
     if (att_data_id >= attribute_data_.size()) {
-      return false;  // Unexpected attribute data.
+      return Status(Status::DRACO_ERROR, "Unexpected attribute data.");  // Unexpected attribute data.
     }
 
     // Ensure that the attribute data is not mapped to a different attributes
     // decoder already.
     if (attribute_data_[att_data_id].decoder_id >= 0) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Attribute data mapped to a different attributes decoder.");
     }
 
     attribute_data_[att_data_id].decoder_id = att_decoder_id;
   } else {
     // Assign the attributes decoder to |pos_encoding_data_|.
     if (pos_data_decoder_id_ >= 0) {
-      return false;  // Some other decoder is already using the data. Error.
+      // Some other decoder is already using the data. Error.
+      return Status(Status::DRACO_ERROR, "Some other decoder is already using the data.");
     }
     pos_data_decoder_id_ = att_decoder_id;
   }
@@ -160,11 +161,11 @@ bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateAttributesDecoder(
   if (decoder_->bitstream_version() >= DRACO_BITSTREAM_VERSION(1, 2)) {
     uint8_t traversal_method_encoded;
     if (!decoder_->buffer()->Decode(&traversal_method_encoded)) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to decode traversal_method_encoded.");
     }
     // Check that decoded traversal method is valid.
     if (traversal_method_encoded >= NUM_TRAVERSAL_METHODS) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Decoded traversal method is valid.");
     }
     traversal_method =
         static_cast<MeshTraversalMethod>(traversal_method_encoded);
@@ -196,14 +197,17 @@ bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateAttributesDecoder(
       typedef DepthFirstTraverser<CornerTable, AttObserver> AttTraverser;
       sequencer = CreateVertexTraversalSequencer<AttTraverser>(encoding_data);
     } else {
-      return false;  // Unsupported method
+      // Unsupported method
+      return Status(Status::DRACO_ERROR, "Unsupported method.");  
     }
   } else {
     if (traversal_method != MESH_TRAVERSAL_DEPTH_FIRST) {
-      return false;  // Unsupported method.
+      // Unsupported method.
+      return Status(Status::DRACO_ERROR, "Unsupported method.");  
     }
     if (att_data_id < 0) {
-      return false;  // Attribute data must be specified.
+      // Attribute data must be specified.
+      return Status(Status::DRACO_ERROR, "Attribute data must be specified.");  
     }
 
     // Per-corner attribute decoder.
@@ -232,7 +236,7 @@ bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::CreateAttributesDecoder(
   }
 
   if (!sequencer) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to create sequencer.");
   }
 
   std::unique_ptr<SequentialAttributeDecodersController> att_controller(
@@ -1218,6 +1222,15 @@ bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::AssignPointsToCorners(
   }
   decoder_->point_cloud()->set_num_points(
       static_cast<uint32_t>(point_to_corner_map.size()));
+  return true;
+}
+
+template <class TraversalDecoder>
+bool MeshEdgebreakerDecoderImpl<TraversalDecoder>::Reset() {
+  pos_data_decoder_id_ = -1;
+  for (int i = 0; i < attribute_data_.size(); i++) {
+    attribute_data_[i].decoder_id = -1;
+  }
   return true;
 }
 

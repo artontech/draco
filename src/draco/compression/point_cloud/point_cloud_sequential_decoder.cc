@@ -28,7 +28,7 @@ bool PointCloudSequentialDecoder::DecodeGeometryData() {
   return true;
 }
 
-bool PointCloudSequentialDecoder::CreateAttributesDecoder(
+Status PointCloudSequentialDecoder::CreateAttributesDecoder(
     int32_t att_decoder_id) {
   // Always create the basic attribute decoder.
   return SetAttributesDecoder(

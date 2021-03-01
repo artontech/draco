@@ -104,6 +104,7 @@ class DecoderBuffer {
 
   // Discards #bytes from the input buffer.
   void Advance(int64_t bytes) { pos_ += bytes; }
+  void Seek(int64_t pos) { pos_ = pos; }
 
   // Moves the parsing position to a specific offset from the beginning of the
   // input data.
@@ -116,6 +117,7 @@ class DecoderBuffer {
   int64_t remaining_size() const { return data_size_ - pos_; }
   int64_t decoded_size() const { return pos_; }
   bool bit_decoder_active() const { return bit_mode_; }
+  int64_t size() const { return data_size_; }
 
   // Returns the bitstream associated with the data. Returns 0 if unknown.
   uint16_t bitstream_version() const { return bitstream_version_; }

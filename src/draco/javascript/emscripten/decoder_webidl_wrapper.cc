@@ -24,6 +24,7 @@ using draco::Metadata;
 using draco::PointAttribute;
 using draco::PointCloud;
 using draco::Status;
+using draco::DracoHeader;
 
 MetadataQuerier::MetadataQuerier() : entry_names_metadata_(nullptr) {}
 
@@ -95,6 +96,20 @@ draco_EncodedGeometryType Decoder::GetEncodedGeometryType_Deprecated(
   return draco::Decoder::GetEncodedGeometryType(in_buffer).value();
 }
 
+const Status *Decoder::DecodeBufferToDracoHeader(DecoderBuffer *in_buffer,
+                                                DracoHeader *header) {
+  last_status_ = draco::Decoder::GetDracoHeader(in_buffer, header);
+  return &last_status_;
+}
+
+const Status *Decoder::DecodeArrayToDracoHeader(const char *data,
+                                                size_t data_size,
+                                                DracoHeader *header) {
+  DecoderBuffer buffer;
+  buffer.Init(data, data_size);
+  return Decoder::DecodeBufferToDracoHeader(&buffer, header);
+}
+
 const Status *Decoder::DecodeBufferToPointCloud(DecoderBuffer *in_buffer,
                                                 PointCloud *out_point_cloud) {
   last_status_ = decoder_.DecodeBufferToGeometry(in_buffer, out_point_cloud);
@@ -114,6 +129,15 @@ const Status *Decoder::DecodeBufferToMesh(DecoderBuffer *in_buffer,
   return &last_status_;
 }
 
+const Status *Decoder::DecodeBufferAttrToMesh(DecoderBuffer *in_buffer,
+                                          draco::DracoHeader *header,
+                                          const char *attribute_name,
+                                          Mesh *out_mesh) {
+  last_status_ = decoder_.DecodeBufferAttrToGeometry(in_buffer,
+    header, attribute_name, out_mesh);
+  return &last_status_;
+}
+
 const draco::Status *Decoder::DecodeArrayToMesh(const char *data,
                                                 size_t data_size,
                                                 Mesh *out_mesh) {
@@ -122,13 +146,26 @@ const draco::Status *Decoder::DecodeArrayToMesh(const char *data,
   return DecodeBufferToMesh(&buffer, out_mesh);
 }
 
+const draco::Status *Decoder::DecodeArrayAttrToMesh(const char *data,
+                                        size_t data_size,
+                                        draco::DracoHeader *header,
+                                        const char *attribute_name,
+                                        draco::Mesh *out_mesh) {
+  DecoderBuffer buffer;
+  buffer.Init(data, data_size);
+  last_status_ = decoder_.DecodeBufferAttrToGeometry(&buffer, header, 
+    attribute_name, out_mesh);
+  return &last_status_;
+}
+
 long Decoder::GetAttributeId(const PointCloud &pc,
                              draco_GeometryAttribute_Type type) const {
   return pc.GetNamedAttributeId(type);
 }
 
 const PointAttribute *Decoder::GetAttribute(const PointCloud &pc, long att_id) {
-  return pc.attribute(att_id);
+  const PointAttribute *attr = pc.attribute(att_id);
+  return attr;
 }
 
 const PointAttribute *Decoder::GetAttributeByUniqueId(const PointCloud &pc,

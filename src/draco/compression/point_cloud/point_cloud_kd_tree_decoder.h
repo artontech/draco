@@ -16,6 +16,7 @@
 #define DRACO_COMPRESSION_POINT_CLOUD_POINT_CLOUD_KD_TREE_DECODER_H_
 
 #include "draco/compression/point_cloud/point_cloud_decoder.h"
+#include "draco/core/status.h"
 
 namespace draco {
 
@@ -23,7 +24,7 @@ namespace draco {
 class PointCloudKdTreeDecoder : public PointCloudDecoder {
  protected:
   bool DecodeGeometryData() override;
-  bool CreateAttributesDecoder(int32_t att_decoder_id) override;
+  Status CreateAttributesDecoder(int32_t att_decoder_id) override;
 };
 
 }  // namespace draco

@@ -22,7 +22,13 @@ namespace draco {
 template <bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
 
-Mesh::Mesh() {}
+Mesh::Mesh() : decoder_(nullptr) {}
+
+Mesh::~Mesh() {
+  if (decoder_ != nullptr) {
+    delete_decoder_(decoder_);
+  }
+}
 
 #ifdef DRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED
 void Mesh::ApplyPointIdDeduplication(

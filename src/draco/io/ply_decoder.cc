@@ -36,7 +36,7 @@ int64_t CountNumTriangles(const PlyElement &face_element,
 }
 }  // namespace
 
-PlyDecoder::PlyDecoder() : out_mesh_(nullptr), out_point_cloud_(nullptr) {}
+PlyDecoder::PlyDecoder() : out_mesh_(nullptr), out_point_cloud_(nullptr), use_metadata_(false) {}
 
 Status PlyDecoder::DecodeFromFile(const std::string &file_name,
                                   Mesh *out_mesh) {
@@ -163,9 +163,23 @@ Status PlyDecoder::DecodeVertexData(const PlyElement *vertex_element) {
   }
   // TODO(b/34330853): For now, try to load x,y,z vertices, red,green,blue,alpha
   // colors, and nx,ny,nz normals. We need to add other properties later.
-  const PlyProperty *const x_prop = vertex_element->GetPropertyByName("x");
-  const PlyProperty *const y_prop = vertex_element->GetPropertyByName("y");
-  const PlyProperty *const z_prop = vertex_element->GetPropertyByName("z");
+  const PlyProperty *x_prop = NULL;
+  const PlyProperty *y_prop = NULL;
+  const PlyProperty *z_prop = NULL;
+  std::vector<const PlyProperty*> oth_props;
+  for (int i = 0; i < vertex_element->num_properties(); i++) {
+    PlyProperty const *prop = vertex_element->GetPropertyById(i);
+    if (prop->name().compare("x") == 0) {
+      x_prop = prop;
+    } else if (prop->name().compare("y") == 0) {
+      y_prop = prop;
+    } else if (prop->name().compare("z") == 0) {
+      z_prop = prop;
+    } else {
+      oth_props.push_back(prop);
+    }
+  }
+
   if (!x_prop || !y_prop || !z_prop) {
     // Currently, we require 3 vertex coordinates (this should be generalized
     // later on).
@@ -202,6 +216,33 @@ Status PlyDecoder::DecodeVertexData(const PlyElement *vertex_element) {
     } else if (dt == DT_INT32) {
       ReadPropertiesToAttribute<int32_t>(
           properties, out_point_cloud_->attribute(att_id), num_vertices);
+    }
+    if (use_metadata_) {
+      // Use metadata to store the name of materials.
+      std::unique_ptr<AttributeMetadata> attr_metadata =
+          std::unique_ptr<AttributeMetadata>(new AttributeMetadata());
+      attr_metadata->AddEntryString("name", "position");
+      out_point_cloud_->AddAttributeMetadata(att_id, std::move(attr_metadata));
+    }
+
+    // TODO: only support DT_FLOAT32, will add support for other types
+    for (int i = 0; i < oth_props.size(); i++) {
+      const PlyProperty *prop = oth_props.at(i);
+      GeometryAttribute ga;
+      ga.Init(GeometryAttribute::GENERIC, nullptr, 1, dt, false,
+              DataTypeLength(DT_FLOAT32), 0);
+      const int oth_att_id = out_point_cloud_->AddAttribute(ga, true, num_vertices);
+      std::vector<const PlyProperty *> oth_properties;
+      oth_properties.push_back(prop);
+      ReadPropertiesToAttribute<float>(
+            oth_properties, out_point_cloud_->attribute(oth_att_id), num_vertices);
+      if (use_metadata_) {
+        // Use metadata to store the name of materials.
+        std::unique_ptr<AttributeMetadata> attr_metadata =
+            std::unique_ptr<AttributeMetadata>(new AttributeMetadata());
+        attr_metadata->AddEntryString("name", prop->name());
+        out_point_cloud_->AddAttributeMetadata(oth_att_id, std::move(attr_metadata));
+      }
     }
   }
 

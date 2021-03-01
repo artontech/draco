@@ -50,6 +50,14 @@ StatusOr<std::unique_ptr<MeshDecoder>> CreateMeshDecoder(uint8_t method) {
   }
   return Status(Status::DRACO_ERROR, "Unsupported encoding method.");
 }
+StatusOr<MeshDecoder*> CreateMeshDecoderPointer(uint8_t method) {
+  if (method == MESH_SEQUENTIAL_ENCODING) {
+    return new MeshSequentialDecoder();
+  } else if (method == MESH_EDGEBREAKER_ENCODING) {
+    return new MeshEdgebreakerDecoder();
+  }
+  return Status(Status::DRACO_ERROR, "Unsupported encoding method.");
+}
 #endif
 
 StatusOr<EncodedGeometryType> Decoder::GetEncodedGeometryType(
@@ -61,6 +69,15 @@ StatusOr<EncodedGeometryType> Decoder::GetEncodedGeometryType(
     return Status(Status::DRACO_ERROR, "Unsupported geometry type.");
   }
   return static_cast<EncodedGeometryType>(header.encoder_type);
+}
+
+Status Decoder::GetDracoHeader(DecoderBuffer *in_buffer, DracoHeader *header) {
+  DecoderBuffer temp_buffer(*in_buffer);
+  DRACO_RETURN_IF_ERROR(PointCloudDecoder::DecodeHeader(&temp_buffer, header));
+  if (header->encoder_type >= NUM_ENCODED_GEOMETRY_TYPES) {
+    return Status(Status::DRACO_ERROR, "Unsupported geometry type.");
+  }
+  return Status(Status::OK, "");
 }
 
 StatusOr<std::unique_ptr<PointCloud>> Decoder::DecodePointCloudFromBuffer(
@@ -87,6 +104,16 @@ StatusOr<std::unique_ptr<Mesh>> Decoder::DecodeMeshFromBuffer(
     DecoderBuffer *in_buffer) {
   std::unique_ptr<Mesh> mesh(new Mesh());
   DRACO_RETURN_IF_ERROR(DecodeBufferToGeometry(in_buffer, mesh.get()))
+  return std::move(mesh);
+}
+
+StatusOr<std::unique_ptr<Mesh>> Decoder::DecodeMeshFromBufferAttr(
+    DecoderBuffer *in_buffer,
+    DracoHeader *header,
+    const char *attribute_name) {
+  std::unique_ptr<Mesh> mesh(new Mesh());
+  DRACO_RETURN_IF_ERROR(DecodeBufferAttrToGeometry(
+    in_buffer, header, attribute_name, mesh.get()))
   return std::move(mesh);
 }
 
@@ -122,6 +149,27 @@ Status Decoder::DecodeBufferToGeometry(DecoderBuffer *in_buffer,
                          CreateMeshDecoder(header.encoder_method))
 
   DRACO_RETURN_IF_ERROR(decoder->Decode(options_, in_buffer, out_geometry))
+  return OkStatus();
+#else
+  return Status(Status::DRACO_ERROR, "Unsupported geometry type.");
+#endif
+}
+
+Status Decoder::DecodeBufferAttrToGeometry(DecoderBuffer *in_buffer,
+                                          DracoHeader *header,
+                                          const char *attribute_name,
+                                          Mesh *out_geometry) {
+#ifdef DRACO_MESH_COMPRESSION_SUPPORTED
+  if (out_geometry->GetDecoder() == nullptr) {
+    StatusOr<MeshDecoder*> status_or = CreateMeshDecoderPointer(header->encoder_method);
+    if (!status_or.ok()) return status_or.status();
+    out_geometry->SetDecoder(status_or.value(), [](void *p) { delete ((MeshDecoder*)p); });
+  }
+
+  std::string name = attribute_name;
+  options_.SetGlobalBool("split_attr", !name.empty());
+  options_.SetGlobalString("attribute_name", name);
+  DRACO_RETURN_IF_ERROR(((MeshDecoder*)out_geometry->GetDecoder())->DecodeAttr(options_, in_buffer, header, out_geometry))
   return OkStatus();
 #else
   return Status(Status::DRACO_ERROR, "Unsupported geometry type.");

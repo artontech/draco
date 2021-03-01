@@ -64,6 +64,7 @@ StatusOr<std::unique_ptr<Mesh>> ReadMeshFromFile(
   if (extension == "ply") {
     // Wavefront PLY file format.
     PlyDecoder ply_decoder;
+    ply_decoder.set_use_metadata(options.GetBool("use_metadata", false));
     DRACO_RETURN_IF_ERROR(ply_decoder.DecodeFromFile(file_name, mesh.get()));
     return std::move(mesh);
   }

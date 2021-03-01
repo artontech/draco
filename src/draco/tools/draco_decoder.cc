@@ -28,6 +28,9 @@ struct Options {
 
   std::string input;
   std::string output;
+
+  bool split_attr = false;
+  std::string attribute_name;
 };
 
 Options::Options() {}
@@ -59,6 +62,9 @@ int main(int argc, char **argv) {
       options.input = argv[++i];
     } else if (!strcmp("-o", argv[i]) && i < argc_check) {
       options.output = argv[++i];
+    } else if (!strcmp("--split_attr", argv[i]) && i < argc_check) {
+      options.split_attr = true;
+      options.attribute_name = argv[++i];
     }
   }
   if (argc < 3 || options.input.empty()) {
@@ -77,6 +83,17 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  if (options.output.empty()) {
+    // Save the output model into a ply file.
+    options.output = options.input + ".ply";
+  }
+
+  // TODO(fgalligan): Change extension code to look for '.'.
+  const std::string extension = draco::parser::ToLower(
+      options.output.size() >= 4
+          ? options.output.substr(options.output.size() - 4)
+          : options.output);
+
   // Create a draco decoding buffer. Note that no data is copied in this step.
   draco::DecoderBuffer buffer;
   buffer.Init(data.data(), data.size());
@@ -93,15 +110,57 @@ int main(int argc, char **argv) {
   if (geom_type == draco::TRIANGULAR_MESH) {
     timer.Start();
     draco::Decoder decoder;
-    auto statusor = decoder.DecodeMeshFromBuffer(&buffer);
-    if (!statusor.ok()) {
-      return ReturnError(statusor.status());
+
+    // Set options
+    draco::DecoderOptions *op = decoder.options();
+    op->SetGlobalBool("split_attr", options.split_attr);
+    op->SetGlobalString("output", options.output);
+    std::cout << "Split attr:" << options.split_attr << std::endl;
+
+    if (options.split_attr) {
+      std::string filename = options.input.substr(0, options.input.size() - 4) +
+                             '_' + options.attribute_name +
+                             options.input.substr(options.input.size() - 4);
+      std::vector<char> data;
+      std::cout << "load:" << filename << std::endl;
+      if (!draco::ReadFileToBuffer(filename, &data)) {
+        printf("Failed opening the generic input file.\n");
+        return false;
+      }
+      if (data.empty()) {
+        printf("Empty generic input file.\n");
+        return false;
+      }
+
+      // Create a draco decoding buffer. Note that no data is copied in this
+      // step.
+      draco::DecoderBuffer attr_buffer;
+      attr_buffer.Init(data.data(), data.size());
+
+      auto statusor = decoder.DecodeMeshFromBuffer(&buffer);
+      if (!statusor.ok()) {
+        return ReturnError(statusor.status());
+      }
+
+      std::unique_ptr<draco::Mesh> in_mesh = std::move(statusor).value();
+      timer.Stop();
+      if (in_mesh) {
+        mesh = in_mesh.get();
+        pc = std::move(in_mesh);
+      }
     }
-    std::unique_ptr<draco::Mesh> in_mesh = std::move(statusor).value();
-    timer.Stop();
-    if (in_mesh) {
-      mesh = in_mesh.get();
-      pc = std::move(in_mesh);
+    else {
+      auto statusor = decoder.DecodeMeshFromBuffer(&buffer);
+      if (!statusor.ok()) {
+        return ReturnError(statusor.status());
+      }
+
+      std::unique_ptr<draco::Mesh> in_mesh = std::move(statusor).value();
+      timer.Stop();
+      if (in_mesh) {
+        mesh = in_mesh.get();
+        pc = std::move(in_mesh);
+      }
     }
   } else if (geom_type == draco::POINT_CLOUD) {
     // Failed to decode it as mesh, so let's try to decode it as a point cloud.
@@ -120,18 +179,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  if (options.output.empty()) {
-    // Save the output model into a ply file.
-    options.output = options.input + ".ply";
-  }
-
   // Save the decoded geometry into a file.
-  // TODO(fgalligan): Change extension code to look for '.'.
-  const std::string extension = draco::parser::ToLower(
-      options.output.size() >= 4
-          ? options.output.substr(options.output.size() - 4)
-          : options.output);
-
   if (extension == ".obj") {
     draco::ObjEncoder obj_encoder;
     if (mesh) {

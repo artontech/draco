@@ -129,7 +129,7 @@ bool MeshSequentialDecoder::DecodeConnectivity() {
   return true;
 }
 
-bool MeshSequentialDecoder::CreateAttributesDecoder(int32_t att_decoder_id) {
+Status MeshSequentialDecoder::CreateAttributesDecoder(int32_t att_decoder_id) {
   // Always create the basic attribute decoder.
   return SetAttributesDecoder(
       att_decoder_id,

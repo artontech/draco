@@ -31,7 +31,7 @@ class SequentialIntegerAttributeDecoder : public SequentialAttributeDecoder {
       const std::vector<PointIndex> &point_ids) override;
 
  protected:
-  bool DecodeValues(const std::vector<PointIndex> &point_ids,
+  Status DecodeValues(const std::vector<PointIndex> &point_ids,
                     DecoderBuffer *in_buffer) override;
   virtual bool DecodeIntegerValues(const std::vector<PointIndex> &point_ids,
                                    DecoderBuffer *in_buffer);

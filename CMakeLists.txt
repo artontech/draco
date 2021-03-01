@@ -591,26 +591,28 @@ if(EMSCRIPTEN AND DRACO_JS_GLUE)
                                   POST_LINK_JS_SOURCES
                                   ${draco_post_link_js_decoder_sources})
 
-  draco_add_emscripten_executable(
-    NAME
-    draco_encoder
-    SOURCES
-    ${draco_encoder_src}
-    DEFINES
-    ${draco_defines}
-    FEATURES
-    DRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED
-    DRACO_ATTRIBUTE_VALUES_DEDUPLICATION_SUPPORTED
-    INCLUDES
-    ${draco_include_paths}
-    LINK_FLAGS
-    "-sEXPORT_NAME=\"DracoEncoderModule\""
-    GLUE_PATH
-    ${draco_encoder_glue_path}
-    PRE_LINK_JS_SOURCES
-    ${draco_pre_link_js_sources}
-    POST_LINK_JS_SOURCES
-    ${draco_post_link_js_sources})
+  if (NOT DRACO_WASM)
+    draco_add_emscripten_executable(
+      NAME
+      draco_encoder
+      SOURCES
+      ${draco_encoder_src}
+      DEFINES
+      ${draco_defines}
+      FEATURES
+      DRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED
+      DRACO_ATTRIBUTE_VALUES_DEDUPLICATION_SUPPORTED
+      INCLUDES
+      ${draco_include_paths}
+      LINK_FLAGS
+      "-sEXPORT_NAME=\"DracoEncoderModule\""
+      GLUE_PATH
+      ${draco_encoder_glue_path}
+      PRE_LINK_JS_SOURCES
+      ${draco_pre_link_js_sources}
+      POST_LINK_JS_SOURCES
+      ${draco_post_link_js_sources})
+  endif()
 
   if(DRACO_ANIMATION_ENCODING)
     set(draco_anim_decoder_glue_path "${draco_build}/glue_animation_decoder")

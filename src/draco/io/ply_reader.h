@@ -95,6 +95,7 @@ class PlyElement {
     }
     return nullptr;
   }
+  const PlyProperty *GetPropertyById(int prop_index) const { return &properties_[prop_index]; }
 
   int num_properties() const { return static_cast<int>(properties_.size()); }
   int num_entries() const { return static_cast<int>(num_entries_); }

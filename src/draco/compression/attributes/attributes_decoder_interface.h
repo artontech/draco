@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "draco/core/decoder_buffer.h"
+#include "draco/core/status.h"
 #include "draco/point_cloud/point_cloud.h"
 
 namespace draco {
@@ -42,7 +43,7 @@ class AttributesDecoderInterface {
 
   // Decode attribute data from the source buffer. Needs to be implemented by
   // the derived classes.
-  virtual bool DecodeAttributes(DecoderBuffer *in_buffer) = 0;
+  virtual Status DecodeAttributes(DecoderBuffer *in_buffer) = 0;
 
   virtual int32_t GetAttributeId(int i) const = 0;
   virtual int32_t GetNumAttributes() const = 0;

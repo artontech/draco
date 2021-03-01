@@ -17,6 +17,7 @@
 
 #include "draco/attributes/point_attribute.h"
 #include "draco/core/bounding_box.h"
+#include "draco/core/decoder_buffer.h"
 #include "draco/core/vector_d.h"
 #include "draco/draco_features.h"
 #include "draco/metadata/geometry_metadata.h"
@@ -176,6 +177,36 @@ class PointCloud {
   // Get a pointer to the metadata of the point cloud.
   GeometryMetadata *metadata() { return metadata_.get(); }
 
+  // Get metadata int entry by attr id
+  const int32_t GetMetadataEntryIntByAttributeId(
+      int32_t att_id, const std::string &name) const {
+    int32_t result = 0;
+    if (metadata_ == nullptr) {
+      return result;
+    }
+    const uint32_t unique_id = attribute(att_id)->unique_id();
+    const AttributeMetadata *attr_metadata = metadata_->GetAttributeMetadataByUniqueId(unique_id);
+    if (attr_metadata) {
+      attr_metadata->GetEntryInt(name, &result);
+    }
+    return result;
+  }
+
+  // Get metadata string entry by attr id
+  const std::string GetMetadataEntryStringByAttributeId(
+      int32_t att_id, const std::string &name) const {
+    std::string result;
+    if (metadata_ == nullptr) {
+      return result;
+    }
+    const uint32_t unique_id = attribute(att_id)->unique_id();
+    const AttributeMetadata *attr_metadata = metadata_->GetAttributeMetadataByUniqueId(unique_id);
+    if (attr_metadata) {
+      attr_metadata->GetEntryString(name, &result);
+    }
+    return result;
+  }
+
   // Returns the number of n-dimensional points stored within the point cloud.
   PointIndex::ValueType num_points() const { return num_points_; }
 
@@ -183,6 +214,14 @@ class PointCloud {
   // new number is valid with respect to the PointAttributes stored in the point
   // cloud.
   void set_num_points(PointIndex::ValueType num) { num_points_ = num; }
+
+  // Basic size and attribute size
+  // void SetBaseSize(int64_t base_size) { base_size_ = base_size; }
+  // int64_t GetBaseSize() { return base_size_; }
+  // void SetAttrSize(int64_t attr_size) { attr_size_ = attr_size; }
+  // int64_t GetAttrSize() { return attr_size_; }
+  // void SetPos(int64_t pos) { pos_ = pos; }
+  // int64_t GetPos() { return pos_; }
 
  protected:
 #ifdef DRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED
@@ -208,6 +247,9 @@ class PointCloud {
   PointIndex::ValueType num_points_;
 
   friend struct PointCloudHasher;
+
+  // Basic size and attribute size
+  // int64_t base_size_, attr_size_, pos_;
 };
 
 // Functor for computing a hash from data stored within a point cloud.

@@ -52,17 +52,18 @@ class AttributesDecoder : public AttributesDecoderInterface {
   }
 
   // Decodes attribute data from the source buffer.
-  bool DecodeAttributes(DecoderBuffer *in_buffer) override {
-    if (!DecodePortableAttributes(in_buffer)) {
-      return false;
+  Status DecodeAttributes(DecoderBuffer *in_buffer) override {
+    Status status = DecodePortableAttributes(in_buffer);
+    if (!status.ok()) {
+      return status;
     }
     if (!DecodeDataNeededByPortableTransforms(in_buffer)) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to decode data needed by portable attributes.");
     }
     if (!TransformAttributesToOriginalFormat()) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to transform attributes to original format.");
     }
-    return true;
+    return Status(Status::OK, "Decode attributes.");
   }
 
  protected:
@@ -74,7 +75,7 @@ class AttributesDecoder : public AttributesDecoderInterface {
     }
     return point_attribute_to_local_id_map_[point_attribute_id];
   }
-  virtual bool DecodePortableAttributes(DecoderBuffer *in_buffer) = 0;
+  virtual Status DecodePortableAttributes(DecoderBuffer *in_buffer) = 0;
   virtual bool DecodeDataNeededByPortableTransforms(DecoderBuffer *in_buffer) {
     return true;
   }

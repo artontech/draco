@@ -101,6 +101,13 @@ class DracoOptions {
   void SetGlobalBool(const std::string &name, bool val) {
     global_options_.SetBool(name, val);
   }
+  std::string GetGlobalString(const std::string &name,
+                        const std::string &default_val) const {
+    return global_options_.GetString(name, default_val);
+  }
+  void SetGlobalString(const std::string &name, const std::string &val) {
+    global_options_.SetString(name, val);
+  }
   template <typename DataTypeT>
   bool GetGlobalVector(const std::string &name, int num_dims,
                        DataTypeT *val) const {

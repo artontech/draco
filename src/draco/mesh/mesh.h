@@ -15,9 +15,11 @@
 #ifndef DRACO_MESH_MESH_H_
 #define DRACO_MESH_MESH_H_
 
+#include <functional>
 #include <memory>
 
 #include "draco/attributes/geometry_indices.h"
+#include "draco/compression/point_cloud/point_cloud_decoder.h"
 #include "draco/core/hash_utils.h"
 #include "draco/core/macros.h"
 #include "draco/core/status.h"
@@ -46,6 +48,7 @@ class Mesh : public PointCloud {
   typedef std::array<PointIndex, 3> Face;
 
   Mesh();
+  ~Mesh();
 
   void AddFace(const Face &face) { faces_.push_back(face); }
 
@@ -109,6 +112,12 @@ class Mesh : public PointCloud {
     MeshAttributeElementType element_type;
   };
 
+  void SetDecoder(void *decoder, std::function<void(void *)> delete_decoder) {
+    decoder_ = decoder;
+    delete_decoder_ = delete_decoder;
+  }
+  void *GetDecoder() { return decoder_; }
+
  protected:
 #ifdef DRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED
   // Extends the point deduplication to face corners. This method is called from
@@ -128,6 +137,9 @@ class Mesh : public PointCloud {
   IndexTypeVector<FaceIndex, Face> faces_;
 
   friend struct MeshHasher;
+
+  void *decoder_;
+  std::function<void(void *)> delete_decoder_;
 };
 
 // Functor for computing a hash from data stored within a mesh.

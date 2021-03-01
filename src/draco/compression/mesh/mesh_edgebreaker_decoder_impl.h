@@ -23,6 +23,7 @@
 #include "draco/compression/mesh/mesh_edgebreaker_shared.h"
 #include "draco/compression/mesh/traverser/mesh_traversal_sequencer.h"
 #include "draco/core/decoder_buffer.h"
+#include "draco/core/status.h"
 #include "draco/draco_features.h"
 #include "draco/mesh/corner_table.h"
 #include "draco/mesh/mesh_attribute_corner_table.h"
@@ -59,13 +60,15 @@ class MeshEdgebreakerDecoderImpl : public MeshEdgebreakerDecoderImplInterface {
   const MeshAttributeIndicesEncodingData *GetAttributeEncodingData(
       int att_id) const override;
 
-  bool CreateAttributesDecoder(int32_t att_decoder_id) override;
+  Status CreateAttributesDecoder(int32_t att_decoder_id) override;
   bool DecodeConnectivity() override;
   bool OnAttributesDecoded() override;
   MeshEdgebreakerDecoder *GetDecoder() const override { return decoder_; }
   const CornerTable *GetCornerTable() const override {
     return corner_table_.get();
   }
+
+  bool Reset() override;
 
  private:
   // Creates a vertex traversal sequencer for the specified |TraverserT| type.

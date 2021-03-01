@@ -43,6 +43,10 @@ class PlyDecoder {
   Status DecodeFromBuffer(DecoderBuffer *buffer, Mesh *out_mesh);
   Status DecodeFromBuffer(DecoderBuffer *buffer, PointCloud *out_point_cloud);
 
+  // Flag for whether using metadata to record other information in the ply
+  // file, e.g. attributes names.
+  void set_use_metadata(bool flag) { use_metadata_ = flag; }
+
  protected:
   Status DecodeInternal();
   DecoderBuffer *buffer() { return &buffer_; }
@@ -62,6 +66,8 @@ class PlyDecoder {
   // always set but |out_mesh_| is optional.
   Mesh *out_mesh_;
   PointCloud *out_point_cloud_;
+
+  bool use_metadata_;
 };
 
 }  // namespace draco

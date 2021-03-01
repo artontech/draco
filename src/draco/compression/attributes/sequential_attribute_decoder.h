@@ -35,7 +35,7 @@ class SequentialAttributeDecoder {
   virtual bool InitializeStandalone(PointAttribute *attribute);
 
   // Performs lossless decoding of the portable attribute data.
-  virtual bool DecodePortableAttribute(const std::vector<PointIndex> &point_ids,
+  virtual Status DecodePortableAttribute(const std::vector<PointIndex> &point_ids,
                                        DecoderBuffer *in_buffer);
 
   // Decodes any data needed to revert portable transform of the decoded
@@ -63,7 +63,7 @@ class SequentialAttributeDecoder {
 
   // The actual implementation of the attribute decoding. Should be overridden
   // for specialized decoders.
-  virtual bool DecodeValues(const std::vector<PointIndex> &point_ids,
+  virtual Status DecodeValues(const std::vector<PointIndex> &point_ids,
                             DecoderBuffer *in_buffer);
 
   void SetPortableAttribute(std::unique_ptr<PointAttribute> att) {

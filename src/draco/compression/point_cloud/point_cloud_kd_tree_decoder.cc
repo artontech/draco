@@ -30,7 +30,8 @@ bool PointCloudKdTreeDecoder::DecodeGeometryData() {
   return true;
 }
 
-bool PointCloudKdTreeDecoder::CreateAttributesDecoder(int32_t att_decoder_id) {
+Status PointCloudKdTreeDecoder::CreateAttributesDecoder(
+    int32_t att_decoder_id) {
   // Always create the basic attribute decoder.
   return SetAttributesDecoder(
       att_decoder_id,

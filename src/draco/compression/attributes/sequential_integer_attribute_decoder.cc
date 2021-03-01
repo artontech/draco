@@ -41,22 +41,25 @@ bool SequentialIntegerAttributeDecoder::TransformAttributeToOriginalFormat(
   return StoreValues(static_cast<uint32_t>(point_ids.size()));
 }
 
-bool SequentialIntegerAttributeDecoder::DecodeValues(
+Status SequentialIntegerAttributeDecoder::DecodeValues(
     const std::vector<PointIndex> &point_ids, DecoderBuffer *in_buffer) {
   // Decode prediction scheme.
   int8_t prediction_scheme_method;
   if (!in_buffer->Decode(&prediction_scheme_method)) {
-    return false;
+    return Status(Status::DRACO_ERROR,
+                  "Failed to decode integer, prediction_scheme_method.");
   }
   if (prediction_scheme_method != PREDICTION_NONE) {
     int8_t prediction_transform_type;
     if (!in_buffer->Decode(&prediction_transform_type)) {
-      return false;
+      return Status(Status::DRACO_ERROR,
+                    "Failed to decode integer, prediction_transform_type.");
     }
     // Check that decoded prediction scheme transform type is valid.
     if (prediction_transform_type < PREDICTION_TRANSFORM_NONE ||
         prediction_transform_type >= NUM_PREDICTION_SCHEME_TRANSFORM_TYPES) {
-      return false;
+      return Status(Status::DRACO_ERROR,
+                    "Failed to decode integer, prediction_transform_type invalid ");
     }
     prediction_scheme_ = CreateIntPredictionScheme(
         static_cast<PredictionSchemeMethod>(prediction_scheme_method),
@@ -65,12 +68,14 @@ bool SequentialIntegerAttributeDecoder::DecodeValues(
 
   if (prediction_scheme_) {
     if (!InitPredictionScheme(prediction_scheme_.get())) {
-      return false;
+      return Status(Status::DRACO_ERROR,
+                    "Failed to decode integer, InitPredictionScheme.");
     }
   }
 
   if (!DecodeIntegerValues(point_ids, in_buffer)) {
-    return false;
+    return Status(Status::DRACO_ERROR,
+                  "Failed to decode integer, DecodeIntegerValues.");
   }
 
 #ifdef DRACO_BACKWARDS_COMPATIBILITY_SUPPORTED
@@ -79,11 +84,12 @@ bool SequentialIntegerAttributeDecoder::DecodeValues(
       decoder()->bitstream_version() < DRACO_BITSTREAM_VERSION(2, 0)) {
     // For older files, revert the transform right after we decode the data.
     if (!StoreValues(num_values)) {
-      return false;
+      return Status(Status::DRACO_ERROR,
+                    "Failed to decode integer, StoreValues.");
     }
   }
 #endif
-  return true;
+  return Status(Status::OK, "Decode integer.");
 }
 
 std::unique_ptr<PredictionSchemeTypedDecoderInterface<int32_t>>

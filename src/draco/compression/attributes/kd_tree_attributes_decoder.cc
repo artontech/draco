@@ -128,16 +128,16 @@ class PointAttributeVectorOutputIterator {
 
 KdTreeAttributesDecoder::KdTreeAttributesDecoder() {}
 
-bool KdTreeAttributesDecoder::DecodePortableAttributes(
+Status KdTreeAttributesDecoder::DecodePortableAttributes(
     DecoderBuffer *in_buffer) {
   if (in_buffer->bitstream_version() < DRACO_BITSTREAM_VERSION(2, 3)) {
     // Old bitstream does everything in the
     // DecodeDataNeededByPortableTransforms() method.
-    return true;
+    return Status(Status::OK, "KD tree portable attributes.");
   }
   uint8_t compression_level = 0;
   if (!in_buffer->Decode(&compression_level)) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to decode KD tree, compression_level.");
   }
   const int32_t num_points = GetDecoder()->point_cloud()->num_points();
 
@@ -185,7 +185,7 @@ bool KdTreeAttributesDecoder::DecodePortableAttributes(
       target_att = quantized_portable_attributes_.back().get();
     } else {
       // Unsupported type.
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to decode KD tree, data_type.");
     }
     // Add attribute to the output iterator used by the core algorithm.
     const DataType data_type = target_att->data_type();
@@ -201,56 +201,56 @@ bool KdTreeAttributesDecoder::DecodePortableAttributes(
     case 0: {
       DynamicIntegerPointsKdTreeDecoder<0> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 0.");
       }
       break;
     }
     case 1: {
       DynamicIntegerPointsKdTreeDecoder<1> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 1.");
       }
       break;
     }
     case 2: {
       DynamicIntegerPointsKdTreeDecoder<2> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 2.");
       }
       break;
     }
     case 3: {
       DynamicIntegerPointsKdTreeDecoder<3> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 3.");
       }
       break;
     }
     case 4: {
       DynamicIntegerPointsKdTreeDecoder<4> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 4.");
       }
       break;
     }
     case 5: {
       DynamicIntegerPointsKdTreeDecoder<5> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 5.");
       }
       break;
     }
     case 6: {
       DynamicIntegerPointsKdTreeDecoder<6> decoder(total_dimensionality);
       if (!decoder.DecodePoints(in_buffer, out_it)) {
-        return false;
+        return Status(Status::DRACO_ERROR, "Failed to decode KD tree, DecodePoints 6.");
       }
       break;
     }
     default:
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to decode KD tree, switch compression_level.");
   }
-  return true;
+  return Status(Status::OK, "KD tree portable attributes.");
 }
 
 bool KdTreeAttributesDecoder::DecodeDataNeededByPortableTransforms(

@@ -16,6 +16,7 @@
 #define DRACO_COMPRESSION_MESH_MESH_EDGEBREAKER_DECODER_IMPL_INTERFACE_H_
 
 #include "draco/compression/attributes/mesh_attribute_indices_encoding_data.h"
+#include "draco/core/status.h"
 #include "draco/mesh/mesh_attribute_corner_table.h"
 
 namespace draco {
@@ -34,12 +35,14 @@ class MeshEdgebreakerDecoderImplInterface {
       int att_id) const = 0;
   virtual const MeshAttributeIndicesEncodingData *GetAttributeEncodingData(
       int att_id) const = 0;
-  virtual bool CreateAttributesDecoder(int32_t att_decoder_id) = 0;
+  virtual Status CreateAttributesDecoder(int32_t att_decoder_id) = 0;
   virtual bool DecodeConnectivity() = 0;
   virtual bool OnAttributesDecoded() = 0;
 
   virtual MeshEdgebreakerDecoder *GetDecoder() const = 0;
   virtual const CornerTable *GetCornerTable() const = 0;
+
+  virtual bool Reset() = 0;
 };
 
 }  // namespace draco

@@ -36,6 +36,8 @@ class Decoder {
   static StatusOr<EncodedGeometryType> GetEncodedGeometryType(
       DecoderBuffer *in_buffer);
 
+  static Status GetDracoHeader(DecoderBuffer *in_buffer, DracoHeader *header);
+
   // Decodes point cloud from the provided buffer. The buffer must be filled
   // with data that was encoded with either the EncodePointCloudToBuffer or
   // EncodeMeshToBuffer methods in encode.h. In case the input buffer contains
@@ -49,6 +51,10 @@ class Decoder {
   // encoded with the EncodePointCloudToBuffer method.
   StatusOr<std::unique_ptr<Mesh>> DecodeMeshFromBuffer(
       DecoderBuffer *in_buffer);
+  StatusOr<std::unique_ptr<Mesh>> DecodeMeshFromBufferAttr(
+      DecoderBuffer *in_buffer,
+      DracoHeader *header,
+      const char *attribute_name);
 
   // Decodes the buffer into a provided geometry. If the geometry is
   // incompatible with the encoded data. For example, when |out_geometry| is
@@ -57,6 +63,10 @@ class Decoder {
   Status DecodeBufferToGeometry(DecoderBuffer *in_buffer,
                                 PointCloud *out_geometry);
   Status DecodeBufferToGeometry(DecoderBuffer *in_buffer, Mesh *out_geometry);
+  Status DecodeBufferAttrToGeometry(DecoderBuffer *in_buffer,
+                                DracoHeader *header,
+                                const char *attribute_name,
+                                Mesh *out_geometry);
 
   // When set, the decoder is going to skip attribute transform for a given
   // attribute type. For example for quantized attributes, the decoder would

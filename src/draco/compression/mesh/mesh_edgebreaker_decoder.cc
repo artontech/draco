@@ -22,7 +22,7 @@ namespace draco {
 
 MeshEdgebreakerDecoder::MeshEdgebreakerDecoder() {}
 
-bool MeshEdgebreakerDecoder::CreateAttributesDecoder(int32_t att_decoder_id) {
+Status MeshEdgebreakerDecoder::CreateAttributesDecoder(int32_t att_decoder_id) {
   return impl_->CreateAttributesDecoder(att_decoder_id);
 }
 
@@ -31,6 +31,12 @@ bool MeshEdgebreakerDecoder::InitializeDecoder() {
   if (!buffer()->Decode(&traversal_decoder_type)) {
     return false;
   }
+
+  // Skip initialize decoder.
+  if (impl_ != nullptr) {
+    return impl_->Reset();
+  }
+
   impl_ = nullptr;
   if (traversal_decoder_type == MESH_EDGEBREAKER_STANDARD_ENCODING) {
 #ifdef DRACO_STANDARD_EDGEBREAKER_SUPPORTED

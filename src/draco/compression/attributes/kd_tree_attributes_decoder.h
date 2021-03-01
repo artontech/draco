@@ -26,7 +26,7 @@ class KdTreeAttributesDecoder : public AttributesDecoder {
   KdTreeAttributesDecoder();
 
  protected:
-  bool DecodePortableAttributes(DecoderBuffer *in_buffer) override;
+  Status DecodePortableAttributes(DecoderBuffer *in_buffer) override;
   bool DecodeDataNeededByPortableTransforms(DecoderBuffer *in_buffer) override;
   bool TransformAttributesToOriginalFormat() override;
 

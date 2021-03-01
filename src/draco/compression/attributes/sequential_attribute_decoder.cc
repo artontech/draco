@@ -34,16 +34,17 @@ bool SequentialAttributeDecoder::InitializeStandalone(
   return true;
 }
 
-bool SequentialAttributeDecoder::DecodePortableAttribute(
+Status SequentialAttributeDecoder::DecodePortableAttribute(
     const std::vector<PointIndex> &point_ids, DecoderBuffer *in_buffer) {
   if (attribute_->num_components() <= 0 ||
       !attribute_->Reset(point_ids.size())) {
-    return false;
+    return Status(Status::DRACO_ERROR, "Failed to decode sequential, num_components.");
   }
-  if (!DecodeValues(point_ids, in_buffer)) {
-    return false;
+  Status status = DecodeValues(point_ids, in_buffer);
+  if (!status.ok()) {
+    return status;
   }
-  return true;
+  return Status(Status::OK, "Decode sequential.");
 }
 
 bool SequentialAttributeDecoder::DecodeDataNeededByPortableTransform(
@@ -97,7 +98,7 @@ bool SequentialAttributeDecoder::InitPredictionScheme(
   return true;
 }
 
-bool SequentialAttributeDecoder::DecodeValues(
+Status SequentialAttributeDecoder::DecodeValues(
     const std::vector<PointIndex> &point_ids, DecoderBuffer *in_buffer) {
   const int32_t num_values = static_cast<uint32_t>(point_ids.size());
   const int entry_size = static_cast<int>(attribute_->byte_stride());
@@ -107,12 +108,12 @@ bool SequentialAttributeDecoder::DecodeValues(
   // Decode raw attribute values in their original format.
   for (int i = 0; i < num_values; ++i) {
     if (!in_buffer->Decode(value_data, entry_size)) {
-      return false;
+      return Status(Status::DRACO_ERROR, "Failed to decode sequential, point_ids " + std::to_string(i));
     }
     attribute_->buffer()->Write(out_byte_pos, value_data, entry_size);
     out_byte_pos += entry_size;
   }
-  return true;
+  return Status(Status::OK, "Decode sequential value.");
 }
 
 }  // namespace draco

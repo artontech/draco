@@ -41,6 +41,7 @@ class PlyEncoder {
   bool ExitAndCleanup(bool return_value);
 
  private:
+  const char *GetAttributeDataType(const PointAttribute * att);
   const char *GetAttributeDataType(int attribute);
 
   EncoderBuffer *out_buffer_;

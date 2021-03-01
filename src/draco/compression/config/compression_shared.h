@@ -133,6 +133,20 @@ struct DracoHeader {
   uint8_t encoder_type;
   uint8_t encoder_method;
   uint16_t flags;
+  public:
+  DracoHeader()
+      : draco_string(),
+         version_major(0),
+         version_minor(0),
+         encoder_type(0),
+         encoder_method(0),
+         flags(0) {}
+
+    uint8_t GetVersionMajor() { return version_major; }
+    uint8_t GetVersionMinor() { return version_minor; }
+    uint8_t GetEncoderType() { return encoder_type; }
+    uint8_t GetEncoderMethod() { return encoder_method; }
+    uint16_t GetFlags() { return flags; }
 };
 
 enum NormalPredictionMode {
