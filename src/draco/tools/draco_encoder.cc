@@ -40,6 +40,7 @@ struct Options {
   std::string output;
 
   bool split_attr = false;
+  bool format_output = false;
 };
 
 Options::Options()
@@ -88,6 +89,8 @@ void Usage() {
   printf(
       "  --split_attr          save attr data into seprate files.\n");
   printf(
+      "  --format_output       format output.\n");
+  printf(
       "\nUse negative quantization values to skip the specified attribute\n");
 }
 
@@ -97,6 +100,8 @@ int StringToInt(const std::string &s) {
 }
 
 void PrintOptions(const draco::PointCloud &pc, const Options &options) {
+  if (options.format_output) return;
+
   printf("Encoder options:\n");
   printf("  Compression level = %d\n", options.compression_level);
   if (options.pos_quantization_bits == 0) {
@@ -165,7 +170,7 @@ int EncodePointCloudToFile(const draco::PointCloud &pc, const std::string &file,
   return 0;
 }
 
-int EncodeMeshToFile(const draco::Mesh &mesh, const std::string &file,
+int EncodeMeshToFile(const draco::Mesh &mesh, const Options &options,
                      draco::Encoder *encoder) {
   draco::CycleTimer timer;
   // Encode the geometry.
@@ -179,13 +184,15 @@ int EncodeMeshToFile(const draco::Mesh &mesh, const std::string &file,
   }
   timer.Stop();
   // Save the encoded geometry into a file.
-  if (!draco::WriteBufferToFile(buffer.data(), buffer.size(), file)) {
+  if (!draco::WriteBufferToFile(buffer.data(), buffer.size(), options.output)) {
     printf("Failed to create the output file.\n");
     return -1;
   }
-  printf("Encoded mesh saved to %s (%" PRId64 " ms to encode).\n", file.c_str(),
-         timer.GetInMs());
-  printf("\nEncoded size = %zu bytes\n\n", buffer.size());
+  if (!options.format_output) {
+    printf("Encoded mesh saved to %s (%" PRId64 " ms to encode).\n", options.output.c_str(),
+          timer.GetInMs());
+    printf("\nEncoded size = %zu bytes\n\n", buffer.size());
+  }
   return 0;
 }
 
@@ -256,6 +263,8 @@ int main(int argc, char **argv) {
     } else if (!strcmp("--split_attr", argv[i])) {
       options.split_attr = true;
       options.use_metadata = true;
+    } else if (!strcmp("--format_output", argv[i])) {
+      options.format_output = true;
     }
   }
   if (argc < 3 || options.input.empty()) {
@@ -362,17 +371,17 @@ int main(int argc, char **argv) {
   // Set options
   auto &op = encoder.options();
   op.SetGlobalBool("split_attr", options.split_attr);
+  op.SetGlobalBool("format_output", options.format_output);
   op.SetGlobalString("output", options.output);
-  std::cout << "Split attr:" << options.split_attr << std::endl;
 
   int ret = -1;
   const bool input_is_mesh = mesh && mesh->num_faces() > 0;
   if (input_is_mesh)
-    ret = EncodeMeshToFile(*mesh, options.output, &encoder);
+    ret = EncodeMeshToFile(*mesh, options, &encoder);
   else
     ret = EncodePointCloudToFile(*pc.get(), options.output, &encoder);
 
-  if (ret != -1 && options.compression_level < 10) {
+  if (!options.format_output && ret != -1 && options.compression_level < 10) {
     printf(
         "For better compression, increase the compression level up to '-cl 10' "
         ".\n\n");

@@ -161,6 +161,7 @@ bool PointCloudEncoder::GenerateAttributesEncoders() {
 
 bool PointCloudEncoder::EncodeAllAttributes() {
   bool split_attr = options_->GetGlobalBool("split_attr", false);
+  bool format_output = options_->GetGlobalBool("format_output", false);
   std::string output = options_->GetGlobalString("output", "");
   const std::string extension = output.size() > 4 ? output.substr(output.size() - 4) : ".drc";
   output = output.size() > 4 ? output.substr(0, output.size() - 4) : "output";
@@ -179,10 +180,13 @@ bool PointCloudEncoder::EncodeAllAttributes() {
 
       // Save the encoded geometry into a file.
       std::string filename = output + '_' + name + extension;
+      if (format_output) std::cout << "{\"file\":\"" << filename << '"';
       if (!WriteBufferToFile(buffer.data(), buffer.size(), filename)) {
-        printf("Failed to create the generic output file.\n");
+        if (format_output) std::cout << "\"err\":\"io\"}" << std::endl;
+        else std::cout << "Failed to create the generic output file." << std::endl;
         return false;
       }
+      std::cout << '}' << std::endl;
     } else {
       if (!encoder->EncodeAttributes(buffer_)) {
         return false;
