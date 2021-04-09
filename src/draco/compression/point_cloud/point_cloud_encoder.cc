@@ -182,7 +182,7 @@ bool PointCloudEncoder::EncodeAllAttributes() {
       std::string filename = output + '_' + name + extension;
       if (format_output) std::cout << "{\"file\":\"" << filename << '"';
       if (!WriteBufferToFile(buffer.data(), buffer.size(), filename)) {
-        if (format_output) std::cout << "\"err\":\"io\"}" << std::endl;
+        if (format_output) std::cout << ",\"err\":\"io\"}" << std::endl;
         else std::cout << "Failed to create the generic output file." << std::endl;
         return false;
       }

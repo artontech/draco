@@ -387,5 +387,11 @@ int main(int argc, char **argv) {
         ".\n\n");
   }
 
+  if (options.format_output) {
+    std::cout << "{\"file\":\"" << options.output << '"';
+    if (ret != 0) std::cout << ",\"err\":\"encode\"}" << std::endl;
+    else std::cout << '}' << std::endl;
+  }
+
   return ret;
 }
