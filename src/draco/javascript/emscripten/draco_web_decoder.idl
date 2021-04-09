@@ -209,9 +209,7 @@ interface MetadataQuerier {
 interface Decoder {
   void Decoder();
 
-  [Const] Status DecodeArrayToDracoHeader([Const] byte[] data,
-                                          unsigned long data_size,
-                                          DracoHeader header);
+  [Const] Status DecodeArrayToDracoHeader(DracoHeader header);
 
   [Const] Status DecodeArrayToPointCloud([Const] byte[] data,
                                          unsigned long data_size,
@@ -311,4 +309,6 @@ interface Decoder {
                                         DracoHeader header,
                                         [Const] DOMString attribute_name,
                                         Mesh out_mesh);
+  
+  unsigned long InitBuffer(unsigned long data_size);
 };

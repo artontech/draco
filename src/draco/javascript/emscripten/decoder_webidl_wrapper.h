@@ -101,6 +101,8 @@ class Decoder {
  public:
   Decoder();
 
+  size_t InitBuffer(size_t data_size);
+
   // Returns the geometry type stored in the |in_buffer|. Return values can be
   // INVALID_GEOMETRY_TYPE, POINT_CLOUD, or MESH.
   // Deprecated: Use decoder.GetEncodedGeometryType(array), where |array| is
@@ -114,9 +116,7 @@ class Decoder {
                                                 draco::DracoHeader *header);
 
   // Decodes header from the provided buffer.
-  const draco::Status *DecodeArrayToDracoHeader(const char *data,
-                                              size_t data_size,
-                                              draco::DracoHeader *header);
+  const draco::Status *DecodeArrayToDracoHeader(draco::DracoHeader *header);
 
   // Decodes a point cloud from the provided buffer.
   // Deprecated: Use DecodeArrayToPointCloud.
@@ -347,6 +347,7 @@ class Decoder {
     return true;
   }
 
+  draco::DecoderBuffer buffer_;
   draco::Decoder decoder_;
   draco::Status last_status_;
 };

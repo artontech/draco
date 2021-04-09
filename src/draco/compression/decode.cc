@@ -80,6 +80,14 @@ Status Decoder::GetDracoHeader(DecoderBuffer *in_buffer, DracoHeader *header) {
   return Status(Status::OK, "");
 }
 
+Status Decoder::GetDracoAttrHeader(DecoderBuffer *in_buffer, DracoHeader *header) {
+  DRACO_RETURN_IF_ERROR(PointCloudDecoder::DecodeHeader(in_buffer, header));
+  if (header->encoder_type >= NUM_ENCODED_GEOMETRY_TYPES) {
+    return Status(Status::DRACO_ERROR, "Unsupported geometry type.");
+  }
+  return Status(Status::OK, "");
+}
+
 StatusOr<std::unique_ptr<PointCloud>> Decoder::DecodePointCloudFromBuffer(
     DecoderBuffer *in_buffer) {
   DRACO_ASSIGN_OR_RETURN(EncodedGeometryType type,

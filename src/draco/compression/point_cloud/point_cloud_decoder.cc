@@ -322,9 +322,11 @@ Status PointCloudDecoder::DecodeAllAttributes() {
     // TODO: Support multi attr loading
     int32_t attr_id = att_dec->GetAttributeId(0);
     if (split_attr) {
-      std::string name = point_cloud_->GetMetadataEntryStringByAttributeId(
-        attr_id, "name");
-      if (attribute_name != name) continue;
+      if (attribute_name.size() > 0) {
+        std::string name = point_cloud_->GetMetadataEntryStringByAttributeId(
+          attr_id, "name");
+        if (attribute_name != name) continue;
+      }
 
       point_cloud_->metadata()->attribute_metadata(attr_id)->AddEntryInt("output", 1);
       //attr_buffer_->set_bitstream_version(bitstream_version);

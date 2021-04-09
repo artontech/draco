@@ -37,6 +37,7 @@ class Decoder {
       DecoderBuffer *in_buffer);
 
   static Status GetDracoHeader(DecoderBuffer *in_buffer, DracoHeader *header);
+  static Status GetDracoAttrHeader(DecoderBuffer *in_buffer, DracoHeader *header);
 
   // Decodes point cloud from the provided buffer. The buffer must be filled
   // with data that was encoded with either the EncodePointCloudToBuffer or

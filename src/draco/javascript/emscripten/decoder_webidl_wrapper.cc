@@ -91,6 +91,13 @@ const char *MetadataQuerier::GetEntryName(const Metadata &metadata,
 
 Decoder::Decoder() {}
 
+char data_[256];
+
+size_t Decoder::InitBuffer(size_t data_size) {
+  buffer_.Init(data_, data_size);
+  return (size_t)data_;
+}
+
 draco_EncodedGeometryType Decoder::GetEncodedGeometryType_Deprecated(
     DecoderBuffer *in_buffer) {
   return draco::Decoder::GetEncodedGeometryType(in_buffer).value();
@@ -102,12 +109,9 @@ const Status *Decoder::DecodeBufferToDracoHeader(DecoderBuffer *in_buffer,
   return &last_status_;
 }
 
-const Status *Decoder::DecodeArrayToDracoHeader(const char *data,
-                                                size_t data_size,
-                                                DracoHeader *header) {
-  DecoderBuffer buffer;
-  buffer.Init(data, data_size);
-  return Decoder::DecodeBufferToDracoHeader(&buffer, header);
+const Status *Decoder::DecodeArrayToDracoHeader(DracoHeader *header) {
+  last_status_ = draco::Decoder::GetDracoAttrHeader(&buffer_, header);
+  return &last_status_;
 }
 
 const Status *Decoder::DecodeBufferToPointCloud(DecoderBuffer *in_buffer,
