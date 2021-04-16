@@ -66,6 +66,8 @@ bool PeekWhitespace(DecoderBuffer *buffer, bool *end_reached) {
 
 void SkipLine(DecoderBuffer *buffer) { ParseLine(buffer, nullptr); }
 
+void SkipOneLine(DecoderBuffer *buffer) { ParseOneLine(buffer, nullptr); }
+
 bool ParseFloat(DecoderBuffer *buffer, float *value) {
   // Read optional sign.
   char ch;
@@ -214,6 +216,44 @@ void ParseLine(DecoderBuffer *buffer, std::string *out_string) {
     if (is_delim || !delim_reached) {
       buffer->Advance(1);
     }
+
+    if (is_delim) {
+      // Mark that we found a delimeter symbol.
+      delim_reached = true;
+      continue;
+    }
+    if (delim_reached) {
+      // We reached a non-delimeter symbol after a delimeter was already found.
+      // Stop the parsing.
+      return;
+    }
+    // Otherwise we put the non-delimeter symbol into the output string.
+    if (out_string) {
+      out_string->push_back(c);
+    }
+  }
+}
+
+void ParseOneLine(DecoderBuffer *buffer, std::string *out_string) {
+  if (out_string) {
+    out_string->clear();
+  }
+  char c;
+  bool delim_reached = false;
+  while (buffer->Peek(&c)) {
+    // Check if |c| is a delimeter. We want to parse all delimeters until we
+    // reach a non-delimeter symbol. (E.g. we want to ignore '\r\n' at the end
+    // of the line).
+    const bool is_newline = c == '\n';
+    const bool is_delim = c == '\r' || is_newline;
+
+    // If |c| is a delimeter or it is a non-delimeter symbol before any
+    // delimeter was found, we advance the buffer to the next character.
+    if (is_delim || !delim_reached) {
+      buffer->Advance(1);
+    }
+
+    if (is_newline) break;
 
     if (is_delim) {
       // Mark that we found a delimeter symbol.

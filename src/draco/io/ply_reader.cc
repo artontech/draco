@@ -101,7 +101,7 @@ StatusOr<bool> PlyReader::ParseEndHeader(DecoderBuffer *buffer) {
   if (std::memcmp(&c[0], "end_header", 10) != 0) {
     return false;
   }
-  parser::SkipLine(buffer);
+  parser::SkipOneLine(buffer);
   return true;
 }
 
