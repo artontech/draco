@@ -30,6 +30,7 @@ macro(draco_get_required_emscripten_flags)
 
   if(DRACO_JS_GLUE)
     unset(required_flags)
+    list(APPEND ${em_FLAG_LIST_VAR} "-sASSERTIONS=1")
     list(APPEND ${em_FLAG_LIST_VAR} "-sALLOW_MEMORY_GROWTH=1")
     list(APPEND ${em_FLAG_LIST_VAR} "-Wno-almost-asm")
     list(APPEND ${em_FLAG_LIST_VAR} "--memory-init-file" "0")

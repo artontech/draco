@@ -28,8 +28,10 @@ class PlyEncoder {
   // Encodes the mesh or a point cloud  and saves it into a file.
   // Returns false when either the encoding failed or when the file couldn't be
   // opened.
-  bool EncodeToFile(const PointCloud &pc, const std::string &file_name);
-  bool EncodeToFile(const Mesh &mesh, const std::string &file_name);
+  bool EncodeToFile(const PointCloud &pc, const std::string &file_name,
+                    const draco::DecoderOptions *op);
+  bool EncodeToFile(const Mesh &mesh, const std::string &file_name,
+                    const draco::DecoderOptions *op);
 
   // Encodes the mesh or the point cloud into a buffer.
   bool EncodeToBuffer(const PointCloud &pc, EncoderBuffer *out_buffer);
@@ -48,6 +50,7 @@ class PlyEncoder {
 
   const PointCloud *in_point_cloud_;
   const Mesh *in_mesh_;
+  const DecoderOptions *op_;
 };
 
 }  // namespace draco

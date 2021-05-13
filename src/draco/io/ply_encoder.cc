@@ -23,10 +23,15 @@
 namespace draco {
 
 PlyEncoder::PlyEncoder()
-    : out_buffer_(nullptr), in_point_cloud_(nullptr), in_mesh_(nullptr) {}
+    : out_buffer_(nullptr),
+      in_point_cloud_(nullptr),
+      in_mesh_(nullptr),
+      op_(nullptr) {}
 
 bool PlyEncoder::EncodeToFile(const PointCloud &pc,
-                              const std::string &file_name) {
+                              const std::string &file_name,
+                              const draco::DecoderOptions *op) {
+  op_ = op;
   std::unique_ptr<FileWriterInterface> file =
       FileWriterFactory::OpenWriter(file_name);
   if (!file) {
@@ -42,9 +47,10 @@ bool PlyEncoder::EncodeToFile(const PointCloud &pc,
   return true;
 }
 
-bool PlyEncoder::EncodeToFile(const Mesh &mesh, const std::string &file_name) {
+bool PlyEncoder::EncodeToFile(const Mesh &mesh, const std::string &file_name,
+                              const DecoderOptions *op) {
   in_mesh_ = &mesh;
-  return EncodeToFile(static_cast<const PointCloud &>(mesh), file_name);
+  return EncodeToFile(static_cast<const PointCloud &>(mesh), file_name, op);
 }
 
 bool PlyEncoder::EncodeToBuffer(const PointCloud &pc,
@@ -62,6 +68,11 @@ bool PlyEncoder::EncodeToBuffer(const Mesh &mesh, EncoderBuffer *out_buffer) {
   return EncodeToBuffer(static_cast<const PointCloud &>(mesh), out_buffer);
 }
 bool PlyEncoder::EncodeInternal() {
+  bool to_generic = false;
+  if (op_) {
+    to_generic = op_->GetGlobalBool("to_generic", false);
+  }
+  
   // Write PLY header.
   // TODO(ostava): Currently works only for xyz positions, rgb(a) colors, and named generic.
   std::stringstream out;
@@ -88,9 +99,10 @@ bool PlyEncoder::EncodeInternal() {
         color_att = att;
       break;
       case GeometryAttribute::GENERIC:
-        if (in_point_cloud_->GetMetadataEntryIntByAttributeId(i, "output") &&
-            !in_point_cloud_->GetMetadataEntryStringByAttributeId(i, "name")
-                .empty()) {
+        if (to_generic ||
+            (in_point_cloud_->GetMetadataEntryIntByAttributeId(i, "output") &&
+             !in_point_cloud_->GetMetadataEntryStringByAttributeId(i, "name")
+                  .empty())) {
           generic_att_ids.push_back(i);
         }
       break;
@@ -149,8 +161,10 @@ bool PlyEncoder::EncodeInternal() {
     int32_t attr_id = generic_att_ids.at(i);
     PointAttribute const *generic_att = in_point_cloud_->attribute(attr_id);
     out << "property " << GetAttributeDataType(generic_att) << " "
-        << in_point_cloud_->GetMetadataEntryStringByAttributeId(attr_id, "name")
+        << (to_generic ? "generic" : in_point_cloud_->GetMetadataEntryStringByAttributeId(
+               attr_id, "name"))
         << std::endl;
+    if (to_generic) break;
   }
 
   if (in_mesh_) {
@@ -186,6 +200,7 @@ bool PlyEncoder::EncodeInternal() {
       PointAttribute const *generic_att = in_point_cloud_->attribute(attr_id);
       buffer()->Encode(generic_att->GetAddress(generic_att->mapped_index(v)),
                        generic_att->byte_stride());
+      if (to_generic) break;
     }
   }
 
