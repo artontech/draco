@@ -140,19 +140,61 @@ template <typename DataTypeT>
 bool PlyDecoder::ReadPropertiesToAttribute(
     const std::vector<const PlyProperty *> &properties,
     PointAttribute *attribute, int num_vertices) {
+  const size_t num_components = properties.size();
   std::vector<std::unique_ptr<PlyPropertyReader<DataTypeT>>> readers;
-  readers.reserve(properties.size());
-  for (int prop = 0; prop < properties.size(); ++prop) {
+  readers.reserve(num_components);
+  for (int prop = 0; prop < num_components; ++prop) {
     readers.push_back(std::unique_ptr<PlyPropertyReader<DataTypeT>>(
         new PlyPropertyReader<DataTypeT>(properties[prop])));
   }
-  std::vector<DataTypeT> memory(properties.size());
+  std::vector<DataTypeT> memory(num_components);
   for (PointIndex::ValueType i = 0; i < static_cast<uint32_t>(num_vertices);
        ++i) {
-    for (int prop = 0; prop < properties.size(); ++prop) {
+    for (int prop = 0; prop < num_components; ++prop) {
       memory[prop] = readers[prop]->ReadValue(i);
     }
     attribute->SetAttributeValue(AttributeValueIndex(i), memory.data());
+  }
+
+  // Clamp 'NaN' and 'Inf' to min value
+  if (typeid(DataTypeT) == typeid(float)) {
+    const std::unique_ptr<float[]> min_values(new float[num_components]);
+    const std::unique_ptr<float[]> max_values(new float[num_components]);
+    const std::unique_ptr<float[]> att_val(new float[num_components]);
+    attribute->GetValue(AttributeValueIndex(0), att_val.get());
+    attribute->GetValue(AttributeValueIndex(0), min_values.get());
+    attribute->GetValue(AttributeValueIndex(0), max_values.get());
+    for (AttributeValueIndex i(1); i < static_cast<uint32_t>(attribute->size());
+         ++i) {
+      attribute->GetValue(i, att_val.get());
+      for (int c = 0; c < num_components; ++c) {
+        const float val = att_val[c];
+        if (std::isnan(val) || std::isinf(val)) {
+          continue;
+        }
+        if (min_values[c] > val) {
+          min_values[c] = val;
+        }
+        if (max_values[c] < val) {
+          max_values[c] = val;
+        }
+      }
+    }
+    for (AttributeValueIndex i(1); i < static_cast<uint32_t>(attribute->size());
+         ++i) {
+      attribute->GetValue(i, att_val.get());
+      bool clamped = false;
+      for (int c = 0; c < num_components; ++c) {
+        const float val = att_val[c];
+        if (std::isnan(val) || std::isinf(val)) {
+          att_val[c] = min_values[c];
+          clamped = true;
+        }
+      }
+      if (clamped) {
+        attribute->SetAttributeValue(AttributeValueIndex(i), att_val.get());
+      }
+    }
   }
   return true;
 }

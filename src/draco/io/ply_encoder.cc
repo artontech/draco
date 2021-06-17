@@ -68,8 +68,9 @@ bool PlyEncoder::EncodeToBuffer(const Mesh &mesh, EncoderBuffer *out_buffer) {
   return EncodeToBuffer(static_cast<const PointCloud &>(mesh), out_buffer);
 }
 bool PlyEncoder::EncodeInternal() {
-  bool to_generic = false;
+  bool split_attr = false, to_generic = false;
   if (op_) {
+    split_attr = op_->GetGlobalBool("split_attr", false);
     to_generic = op_->GetGlobalBool("to_generic", false);
   }
   
@@ -99,7 +100,7 @@ bool PlyEncoder::EncodeInternal() {
         color_att = att;
       break;
       case GeometryAttribute::GENERIC:
-        if (to_generic ||
+        if ((!split_attr && to_generic) ||
             (in_point_cloud_->GetMetadataEntryIntByAttributeId(i, "output") &&
              !in_point_cloud_->GetMetadataEntryStringByAttributeId(i, "name")
                   .empty())) {
