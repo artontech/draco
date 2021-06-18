@@ -186,7 +186,7 @@ bool PointCloudEncoder::EncodeAllAttributes() {
         else std::cout << "Failed to create the generic output file." << std::endl;
         return false;
       }
-      std::cout << '}' << std::endl;
+      if (format_output) std::cout << '}' << std::endl;
     } else {
       if (!encoder->EncodeAttributes(buffer_)) {
         return false;
